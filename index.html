@@ -241,7 +241,7 @@
       <div class="nav-left">
         <div class="nav-logo"><img src="leadhive-logo.png" alt="LeadHive" /></div>
         <div class="nav-brand" style="font-size:26px; font-weight:800; display:flex; align-items:center; gap:6px;">
-          <span style="color:#0A2E5C;">Lead</span><span style="color:#F5B400;">Hive</span>
+          <span style="color:#1E3A8A;">Lead</span><span style="color:#F4B400;">Hive</span>
         </div>
       </div>
       <div class="nav-right">
@@ -911,6 +911,237 @@
     });
 
   </script>
+  <!-- ================= REAL AI CHATBOT (FLASK BACKEND) ================= -->
+
+<style>
+  #ai-chat-btn{
+    position:fixed;
+    bottom:24px;
+    right:24px;
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    background:linear-gradient(180deg,#0A4C9A,#0D6ECF);
+    color:#fff;
+    font-size:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 12px 30px rgba(0,0,0,.25);
+    z-index:99999;
+  }
+
+  #ai-chatbox{
+    position:fixed;
+    bottom:96px;
+    right:24px;
+    width:340px;
+    max-height:520px;
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 22px 60px rgba(0,0,0,.28);
+    display:none;
+    flex-direction:column;
+    overflow:hidden;
+    z-index:99999;
+    font-family:Inter,system-ui,Arial;
+  }
+
+  .ai-header{
+    background:linear-gradient(180deg,#0A4C9A,#0D6ECF);
+    color:#fff;
+    padding:14px 16px;
+    font-weight:800;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .ai-messages{
+    padding:14px;
+    flex:1;
+    overflow-y:auto;
+    background:#f8fafc;
+  }
+
+  .ai-msg{
+    margin-bottom:10px;
+    padding:10px 12px;
+    border-radius:12px;
+    font-size:14px;
+    line-height:1.5;
+    max-width:85%;
+  }
+
+  .ai-bot{background:#e6efff;color:#0A2E5C;}
+  .ai-user{background:#0D6ECF;color:#fff;margin-left:auto;}
+
+  .ai-input{
+    display:flex;
+    border-top:1px solid #e5e7eb;
+  }
+
+  .ai-input input{
+    flex:1;
+    padding:12px;
+    border:none;
+    outline:none;
+    font-size:14px;
+  }
+
+  .ai-input button{
+    background:#F28C28;
+    border:none;
+    color:#fff;
+    padding:0 18px;
+    font-weight:800;
+    cursor:pointer;
+  }
+</style>
+
+<div id="ai-chat-btn">🤖</div>
+
+<div id="ai-chatbox">
+  <div class="ai-header">
+    LeadHive AI
+    <span style="cursor:pointer" onclick="toggleAI()">✕</span>
+  </div>
+  <div class="ai-messages" id="aiMessages">
+    <div class="ai-msg ai-bot">
+      👋 Hi! I’m LeadHive AI. Ask me anything about LeadHive.
+    </div>
+  </div>
+  <div class="ai-input">
+    <input id="aiInput" placeholder="Type your question..." />
+    <button onclick="sendAI()">Send</button>
+  </div>
+</div>
+
+<script>
+  const chatBtn = document.getElementById("ai-chat-btn");
+  const chatBox = document.getElementById("ai-chatbox");
+  const messages = document.getElementById("aiMessages");
+  const input = document.getElementById("aiInput");
+
+  chatBtn.onclick = toggleAI;
+
+  function toggleAI(){
+    chatBox.style.display = chatBox.style.display === "flex" ? "none" : "flex";
+  }
+
+  function addMsg(text, cls){
+    const d = document.createElement("div");
+    d.className = "ai-msg " + cls;
+    d.innerText = text;
+    messages.appendChild(d);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function sendAI(){
+    const q = input.value.trim();
+    if(!q) return;
+
+    addMsg(q,"ai-user");
+    input.value="";
+
+    fetch("http://localhost:5000/chat",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message:q })
+    })
+    .then(r=>r.json())
+    .then(d=>{
+      addMsg(d.reply || "No response","ai-bot");
+    })
+    .catch(()=>{
+      addMsg("⚠️ AI server is not running","ai-bot");
+    });
+  }
+
+  input.addEventListener("keydown",e=>{
+    if(e.key==="Enter") sendAI();
+  });
+</script>
+
+<!-- ================= END REAL AI CHATBOT ================= -->
+
+<!-- ===== CHATBOT UI POLISH ===== -->
+<style>
+  #ai-chatbox{
+    animation: slideUp .25s ease;
+  }
+
+  @keyframes slideUp{
+    from{transform:translateY(20px);opacity:0}
+    to{transform:translateY(0);opacity:1}
+  }
+
+  .typing{
+    display:flex;
+    gap:4px;
+    align-items:center;
+  }
+  .typing span{
+    width:6px;
+    height:6px;
+    background:#0D6ECF;
+    border-radius:50%;
+    animation: blink 1.4s infinite both;
+  }
+  .typing span:nth-child(2){animation-delay:.2s}
+  .typing span:nth-child(3){animation-delay:.4s}
+
+  @keyframes blink{
+    0%{opacity:.2}
+    20%{opacity:1}
+    100%{opacity:.2}
+  }
+</style>
+<script>
+  function detectLang(text){
+    if(/[\u0C00-\u0C7F]/.test(text)) return "telugu";
+    if(/[\u0900-\u097F]/.test(text)) return "hindi";
+    return "english";
+  }
+
+  // override sendAI safely
+  function sendAI(){
+    const q = input.value.trim();
+    if(!q) return;
+
+    addMsg(q,"ai-user");
+    input.value="";
+
+    // typing indicator
+    const typing = document.createElement("div");
+    typing.className = "ai-msg ai-bot";
+    typing.innerHTML = `<div class="typing">
+      <span></span><span></span><span></span>
+    </div>`;
+    messages.appendChild(typing);
+    messages.scrollTop = messages.scrollHeight;
+
+    fetch("http://localhost:5000/chat",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        message:q,
+        language: detectLang(q)
+      })
+    })
+    .then(r=>r.json())
+    .then(d=>{
+      typing.remove();
+      addMsg(d.reply || "No response","ai-bot");
+    })
+    .catch(()=>{
+      typing.remove();
+      addMsg("⚠️ AI server not reachable","ai-bot");
+    });
+  }
+</script>
+
 </body>
 </html>
 
